@@ -53,12 +53,17 @@ const int CYAN_WIN = 11;     // Light Cyan
 const int MAGENTA_WIN = 13;  // Light Magenta
 const int WHITE = 15;        // White
 
+/**
+        - Game board representation using a 2D array
+        - This data structure was chosen for its simplicity and direct mapping to the game board
+*/
 char space[3][3] = {{'1', '2', '3'}, {'4', '5', '6'}, {'7', '8', '9'}};
 char token = 'X';  // Current player's token
 bool gameTie = false;  // Game state tracking
 string name1, name2;  // Player names
 int width = 60;  // Display formatting constant
 
+//Clears the console screen based on the operating system
 void clearConsole() {
 #ifdef _WIN32
     system("cls"); // For windows system
@@ -67,6 +72,10 @@ void clearConsole() {
 #endif
 }
 
+/**
+      -Displays the current state of the game board
+      -Uses formatted output to create a visually appealing board
+ */
 void toeBox() {
     int x = 39;
     setColor(GREEN_WIN);
@@ -134,8 +143,13 @@ void toeBox() {
 }
 
 
-//1. Check winner
+/**
+     - Checks for winning conditions or a tie
+     - @return true if there's a winner or tie, false otherwise
 
+     - Algorithm complexity: O(n²) where n is the board size (3)
+     - This is optimal for a 3x3 board as we need to check all possible winning combinations
+*/
 bool checkWinner() {
     // First check for a winner
     for (int i = 0; i < 3; i++) {
@@ -169,7 +183,10 @@ bool checkWinner() {
     return false;
 }
 
-
+/**
+     - Handles the game logic for player moves
+     - Includes input validation and board updates
+*/
 void gameLogic() {
     int digit;
     bool validChoice = false;
@@ -227,10 +244,28 @@ void gameLogic() {
     }
 }
 
-
+/**
+     - Resets the game board to its initial state
+     - Complexity: O(n²) where n is the board size (3)
+ */
 //2.reset game and wouldwin
+/**
+ - Checks if a move would result in a win
+     - row Row position to check
+     - col Column position to check
+     - playerToken Token to check for ('X' or 'O')
+ - @return true if the move would result in a win
+ */
 
-
+/**
+ - Implements AI moves for single-player mode
+ - Uses a strategic approach to make moves:
+     1. Win if possible
+     2. Block opponent's winning move
+     3. Take center if available
+     4. Take corners if available
+     5. Take edges as last resort
+*/
 void aiMove() {
     // 1.Try to win
     for (int i = 0; i < 3; i++) {
@@ -287,11 +322,23 @@ void aiMove() {
 }
 
 //3.play again and string
-
+/**
+    - Function to convert a string to Title Case
+    - @eg "MISIKER GENENE" → "Misiker Genene"
+ */
 //4.Single player Function
-
+/**
+     - Manages the single-player game mode
+     - Handles player vs AI gameplay
+ */
 //5.Two player Function
-
+/**
+     - Manages the two-player game mode
+     - Handles player vs player gameplay
+*/
+/**
+    - Displays the main menu and handles user navigation
+*/
 void showMenu() {
     int choice;
     while (true) {
@@ -382,7 +429,10 @@ void showMenu() {
         }
     }
 }
-
+/**
+     - Main function that initializes the game
+     - @return 0 on successful execution
+*/
 int main() {
     srand(time(0));  // Initialize random seed for AI moves
     showMenu();
