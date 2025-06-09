@@ -91,6 +91,7 @@ This repository is for educational use only. Redistribution or reuse without pro
 ## 🙌 Credits
 
 **Developed by Group 1 — Arbaminch University 2016 Batch Software Students**
+
 *Department of Software Engineering*
 
 ### 👨‍💻 Contributors
