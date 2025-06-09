@@ -97,7 +97,7 @@ This repository is for educational use only. Redistribution or reuse without pro
 ### 👨‍💻 Contributors
 
 * Misiker Genene (NSR/1450/16)
-* Biruk Getahun (NSR/----/16)
+* Biruk Getahun (NSR/204/16)
 * Tsion Samuel (NSR/----/16)
 * Heran Mohammed (NSR/----/16)
 * Hilina Kitachew (NSR/----/16)
