@@ -72,8 +72,8 @@ This project is subject to academic collaboration policy:
 
 ```
 📁 TicTacToe/
-├── tictactoe.cpp        # Main source code
-├── README.md            # Project documentation
+├── TicTacToe Game.cpp        # Main source code
+├── README.md               # Project documentation
 └── images/
     ├── banner1.png       # Header image
     ├── banner2.png 
