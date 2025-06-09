@@ -4,7 +4,7 @@
 A simple terminal-based **Tic Tac Toe** game built using C++. This project was collaboratively developed as part of our coursework to enhance programming fundamentals and GitHub collaboration skills.
 
 <p align="center">
-  <img src="images/banner1.png" width="100%" />
+  <img src="images/banner1.png" width="75%" />
   <img src="images/banner2.png" width="100%" />
 </p>
 
