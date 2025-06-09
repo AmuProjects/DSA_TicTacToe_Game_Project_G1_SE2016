@@ -136,6 +136,39 @@ void toeBox() {
 
 //1. Check winner
 
+bool checkWinner() {
+    // First check for a winner
+    for (int i = 0; i < 3; i++) {
+        if ((space[i][0] == space[i][1] && space[i][1] == space[i][2]) 
+            (space[0][i] == space[1][i] && space[1][i] == space[2][i])) {
+            return true;
+        }
+    }
+    if ((space[0][0] == space[1][1] && space[1][1] == space[2][2]) 
+        (space[0][2] == space[1][1] && space[1][1] == space[2][0])) {
+        return true;
+    }
+
+    // Check for draw
+    bool isDraw = true;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (space[i][j] != 'X' && space[i][j] != 'O') {
+                isDraw = false;
+                return false;
+            }
+        }
+    }
+
+    // If we get here, it's a draw
+    if (isDraw) {
+        gameTie = true;
+        return true;
+    }
+
+    return false;
+}
+
 
 void gameLogic() {
     int digit;
