@@ -3,10 +3,8 @@
 
 A simple terminal-based **Tic Tac Toe** game built using C++. This project was collaboratively developed as part of our coursework to enhance programming fundamentals and GitHub collaboration skills.
 
-<p align="center">
-  <img src="images/banner1.png" width="45%" />
-  <img src="images/banner2.png" width="45%" />
-</p>
+![Tic Tac Toe Banner 1](images/banner1.png)
+![Tic Tac Toe Banner 2](images/banner2.png)
 
 ---
 
