@@ -3,6 +3,10 @@
 
 A simple terminal-based **Tic Tac Toe** game built using C++. This project was collaboratively developed as part of our coursework to enhance programming fundamentals and GitHub collaboration skills.
 
+---
+
+## 📷 Sample outputs
+
 <p align="center">
   <img src="images/banner1.png" width="50%" />
   <img src="images/banner2.png" width="100%" />
@@ -25,6 +29,7 @@ This game enables two players to play Tic Tac Toe in a terminal environment. It 
 - 🔁 Game replay and reset option
 - 🧽 Cross-platform console clearing (Windows/Linux/macOS)
 
+## 📷 Sample output AI moves
 ![Gameplay with AI Screenshot](images/banner3.png) 
 
 ---
