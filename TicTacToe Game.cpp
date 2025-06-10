@@ -5,7 +5,7 @@
             -NAME                         -ID
         1.Misiker Genene                 NSR/1450/16
         2.Biruk Getahun                  NSR/204/16
-        3.Tsion Samuel                   NSR//16
+        3.Tsion Samuel                   NSR/989/16
         4.Heran Mohammed                 NSR//16
         5.Hilina Kitachew                NSR/500/16
         6.Sadam Robel                    NSR//16
@@ -360,11 +360,48 @@ void aiMove() {
     - Function to convert a string to Title Case
     - @eg "MISIKER GENENE" → "Misiker Genene"
  */
-//4.Single player Function
+
 /**
      - Manages the single-player game mode
      - Handles player vs AI gameplay
  */
+void singlePlayerGame() {
+    do {
+        resetGame();
+        clearConsole();
+        cout << setw(58) << "Enter your name: ";
+        getline(cin, name1);
+        name1 = toTitleCase(name1); // Converts to "Firstname Lastname"
+
+        name2 = "AI";
+
+        while (!checkWinner()) {
+            clearConsole();
+            toeBox();
+            if (token == 'X') {
+                gameLogic();
+            } else {
+                aiMove();
+                token = 'X';
+            }
+        }
+
+        clearConsole();
+        toeBox();
+        if (gameTie) {
+            setColor(RED_WIN);
+            cout << setw(58) << "It's a draw!\n";
+            setColor(WHITE);
+        } else {
+            char winnerToken = (token == 'X') ? 'O' : 'X';
+            setColor(YELLOW_WIN);
+            cout << setw(70) << "*************************************************\n";
+            cout << setw(45) << ((winnerToken == 'X') ? name1 : name2) << " Wins!\n";
+            cout << setw(70) << "*************************************************\n";
+            setColor(WHITE);
+        }
+    } while (playAgain());
+}
 //5.Two player Function
 /**
      - Manages the two-player game mode
