@@ -88,32 +88,32 @@ bool isDraw();
 
 We implemented Priority-based Heuristic Algorithm (or Rule-based AI for Tic-Tac-Toe).:
 
-** * Algorithm & Key Characteristics: * **
-** Immediate Win Check (Greedy Strategy) **
+**Algorithm & Key Characteristics:**
+**Immediate Win Check (Greedy Strategy)**
 
 * First, the AI checks if it can win immediately by placing an 'O' in any empty cell (using wouldWin()).
 
 * This is a greedy choice—prioritizing the winning move if it exists.
 
-** * Block Opponent's Win (Defensive Strategy) * **
+**Block Opponent's Win (Defensive Strategy)**
 
 * If the opponent ('X') can win in the next move, the AI blocks them by placing an 'O' in that position.
 
 * This mimics the minimax concept of preventing the opponent's advantage, but without full tree traversal.
 
-** * Center Control (Heuristic) * **
+**Center Control (Heuristic)**
 
 * The center is the most strategic position in Tic-Tac-Toe, so the AI takes it if available.
 
 * This is a static evaluation heuristic (common in board games).
 
-** * Corner Preference (Heuristic) * **
+**Corner Preference (Heuristic)**
 
 * Corners offer more winning opportunities, so the AI prioritizes them next.
 
 * Another heuristic-based choice (empirically strong in Tic-Tac-Toe).
 
-** * Edge Fallback (Default) * **
+**Edge Fallback (Default)**
 
 * If none of the above apply, the AI takes any remaining edge.
 
