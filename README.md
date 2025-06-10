@@ -28,6 +28,15 @@ This game enables two players to play Tic Tac Toe in a terminal environment. It 
 - 🧽 Cross-platform console clearing (Windows/Linux/macOS)
 
 ##    📷 Sample output AI moves
+### We intentionally made the AI unbeatable. If you somehow beat it, you’ll see this message:
+
+bash
+Copy
+Edit
+🏆 YOU BEAT THE AI! 🏆  
+What?! How did you do that?  
+You’ve done the impossible — respect!  
+🔒 Achievement Unlocked: AI Slayer
 
 ![Gameplay with AI Screenshot](images/banner3.png) 
 
