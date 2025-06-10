@@ -399,6 +399,16 @@ void singlePlayerGame() {
             cout << setw(45) << ((winnerToken == 'X') ? name1 : name2) << " Wins!\n";
             cout << setw(70) << "*************************************************\n";
             setColor(WHITE);
+
+          // If player (X) beats AI (O), show special message
+            if (winnerToken == 'X') {
+                cout << "\n🏆🎉 YOU BEAT THE AI! 🎉🏆\n";
+                cout << "What?! How did you do that?\n";
+                cout << "You’ve just done the impossible.\n";
+                cout << "Either you’re a genius… or the AI blinked.\n";
+                cout << "Respect. You’ve earned it.\n";
+                cout << "\n🔒 Achievement Unlocked: AI Slayer\n\n";
+            }
         }
     } while (playAgain());
 }
