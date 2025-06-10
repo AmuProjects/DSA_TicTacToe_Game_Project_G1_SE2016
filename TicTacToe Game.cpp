@@ -7,7 +7,7 @@
         2.Biruk Getahun                  NSR/204/16
         3.Tsion Samuel                   NSR//16
         4.Heran Mohammed                 NSR//16
-        5.Hilina Kitachew                NSR//16
+        5.Hilina Kitachew                NSR/500/16
         6.Sadam Robel                    NSR//16
 
   @date [Current Date]
@@ -248,7 +248,16 @@ void gameLogic() {
      - Resets the game board to its initial state
      - Complexity: O(n²) where n is the board size (3)
  */
-//2.reset game and wouldwin
+void resetGame() {
+    char defaultSpace = '1';
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            space[i][j] = defaultSpace++;
+        }
+    }
+    token = 'X';
+    gameTie = false;
+}
 /**
  - Checks if a move would result in a win
      - row Row position to check
@@ -256,7 +265,32 @@ void gameLogic() {
      - playerToken Token to check for ('X' or 'O')
  - @return true if the move would result in a win
  */
+bool wouldWin(int row, int col, char playerToken) {
+    // Temporarily make the move
+    char original = space[row][col];
+    space[row][col] = playerToken;
 
+    // Check if this move would win
+    bool win = false;
+
+    // Check row
+    if (space[row][0] == playerToken && space[row][1] == playerToken && space[row][2] == playerToken)
+        win = true;
+
+    // Check column
+    if (space[0][col] == playerToken && space[1][col] == playerToken && space[2][col] == playerToken)
+        win = true;
+
+    // Check diagonals
+    if (row == col && space[0][0] == playerToken && space[1][1] == playerToken && space[2][2] == playerToken)
+        win = true;
+    if (row + col == 2 && space[0][2] == playerToken && space[1][1] == playerToken && space[2][0] == playerToken)
+        win = true;
+
+    // Undo the move
+    space[row][col] = original;
+    return win;
+}
 /**
  - Implements AI moves for single-player mode
  - Uses a strategic approach to make moves:
