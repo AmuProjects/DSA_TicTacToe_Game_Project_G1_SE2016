@@ -86,7 +86,7 @@ bool isDraw();
 
 ### 🤖 AI Strategies
 
-We implemented Priority-based Heuristic Algorithm (or Rule-based AI for Tic-Tac-Toe).:
+We implemented Priority-based Heuristic Algorithm (or Rule-based AI for Tic-Tac-Toe):
 
 **Algorithm & Key Characteristics:**
 **Immediate Win Check (Greedy Strategy)**
@@ -168,7 +168,7 @@ bool isValidMove(int row, int col);
 
 ### 🧠 Bonus DSA Concepts Covered
 
-* **Backtracking**: In the Minimax algorithm, AI tries different paths recursively.
+* **Backtracking**: In the  Priority-based Heuristic Algorithm (or Rule-based AI for Tic-Tac-Toe), AI tries different paths recursively.
 * **State Space Search Tree**: The board evolves through a decision tree of moves.
 * **Greedy vs. Exhaustive Search**: Random AI is greedy; Minimax is exhaustive.
 * **Control Structures & Validation**: Core to managing turn-based game logic.
