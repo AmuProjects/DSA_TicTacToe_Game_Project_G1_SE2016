@@ -8,7 +8,7 @@
         3.Tsion Samuel                   NSR/989/16
         4.Heran Mohammed                 NSR/1667/16
         5.Hilina Kitachew                NSR/500/16
-        6.Sadam Robel                    NSR//16
+        6.Sadam Robel                    NCSR/1478/16
 
   @date [Current Date]
 
@@ -434,11 +434,43 @@ void singlePlayerGame() {
         }
     } while (playAgain());
 }
-//5.Two player Function
+
 /**
      - Manages the two-player game mode
      - Handles player vs player gameplay
 */
+void twoPlayerGame() {
+    do {
+        resetGame();
+        clearConsole();
+        cout << setw(58) << "Enter the name of the First player : ";
+        getline(cin, name1);
+        name1 = toTitleCase(name1); // Converts to "Firstname Lastname"
+
+        cout << setw(58) << "Enter the name of the Second player: ";
+        getline(cin, name2);
+        name2 = toTitleCase(name2); // Converts to "Firstname Lastname"
+
+        while (!checkWinner()) {
+            clearConsole();
+            toeBox();
+            gameLogic();
+        }
+
+        clearConsole();
+        toeBox();
+        if (gameTie) {
+            cout << setw(58) << "It's a draw!\n";
+        } else {
+            char winnerToken = (token == 'X') ? 'O' : 'X';
+            setColor(YELLOW_WIN);
+            cout << setw(70) << "*************************************************\n";
+            cout << setw(45) << ((winnerToken == 'X') ? name1 : name2) << " Wins!\n";
+            cout << setw(70) << "*************************************************\n";
+            setColor(WHITE);
+        }
+    } while (playAgain());
+}
 /**
     - Displays the main menu and handles user navigation
 */
