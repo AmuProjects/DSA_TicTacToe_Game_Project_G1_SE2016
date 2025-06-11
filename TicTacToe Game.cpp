@@ -6,7 +6,7 @@
         1.Misiker Genene                 NSR/1450/16
         2.Biruk Getahun                  NSR/204/16
         3.Tsion Samuel                   NSR/989/16
-        4.Heran Mohammed                 NSR//16
+        4.Heran Mohammed                 NSR/1667/16
         5.Hilina Kitachew                NSR/500/16
         6.Sadam Robel                    NSR//16
 
@@ -355,12 +355,34 @@ void aiMove() {
     }
 }
 
-//3.play again and string
+bool playAgain() {
+    char choice;
+    setColor(YELLOW_WIN);
+    cout << setw(35) << "\nWould you like to play again? (Y/N): ";
+    cin >> choice;
+    cin.ignore(10000, '\n');  // Clear input buffer
+    setColor(WHITE);
+    return (choice == 'Y' || choice == 'y');
+}
 /**
     - Function to convert a string to Title Case
     - @eg "MISIKER GENENE" → "Misiker Genene"
  */
-
+string toTitleCase(string str) {
+    bool newWord = true;
+    for (char &c : str) {
+        if (newWord) {
+            c = toupper(c);  // Capitalize first letter of word
+            newWord = false;
+        } else {
+            c = tolower(c);  // Lowercase rest of word
+        }
+        if (isspace(c)) {
+            newWord = true; // Next character starts a new word
+        }
+    }
+    return str;
+}
 /**
      - Manages the single-player game mode
      - Handles player vs AI gameplay
