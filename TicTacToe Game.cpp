@@ -10,7 +10,7 @@
         5.Hilina Kitachew                NSR/500/16
         6.Sadam Robel                    NCSR/1478/16
 
-  @date [Current Date]
+  @date [6/11/2025]
 
  * This program implements a Tic-Tac-Toe game with the following features:
        - Two-player mode
