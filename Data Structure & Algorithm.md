@@ -1,5 +1,5 @@
 
-## 🧠 Data Storage & Algorithm Selection in Tic Tac Toe
+## 🧠 Data Structure & Algorithm Selection in Tic Tac Toe
 
 This section describes how data is stored and manipulated in our Tic Tac Toe game, the algorithms used to determine game logic, and how we apply computer science concepts like time/space complexity and core data structures and algorithms.
 
