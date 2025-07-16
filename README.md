@@ -81,7 +81,7 @@ This project is subject to academic collaboration policy:
 ```
 📁 DSA_TicTacToe_Game_Project_G1_SE2016/
 ├── TicTacToe Game.cpp        # Main source code
-├── Data Structure & Algorithm.md
+├── Data Structure & Algorithm.md # Data Structure & Algorithm documentation
 ├── README.md               # Project documentation
 └── images/
     ├── banner1.png       # Header image
