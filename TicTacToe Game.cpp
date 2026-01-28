@@ -1,5 +1,5 @@
 /**
-  @Title TicTacToe Game
+  @Title TicTacToe Game - Enhanced Educational Edition
   @Intro Implementation of a Tic-Tac-Toe game with both single and two-player modes
   @authors
             -NAME                         -ID
@@ -10,154 +10,315 @@
         5.Hilina Kitachew                NSR/500/16
         6.Sadam Robel                    NCSR/1478/16
 
-  @date [6/11/2025]
+  @date [January 28, 2026]
 
- * This program implements a Tic-Tac-Toe game with the following features:
-       - Two-player mode
-       - Single-player mode against AI
-       - Input validation
-       - Clear console display
-       - Game state tracking
+  ENHANCED FEATURES:
+    - Three AI difficulty levels (Easy, Medium, Hard with Minimax)
+    - Score tracking and statistics
+    - Move history with undo functionality
+    - Cross-platform support (Windows, Linux, macOS)
+    - Enhanced error handling
+    - Educational code comments and complexity analysis
  */
 
 #include <iostream>
-#include <cstdlib> // For system("clear") or system("cls")
-#include <ctime>   // For random AI moves
+#include <cstdlib>
+#include <ctime>
 #include <iomanip>
-#include <algorithm> // for transform()
-#include <cctype>    // for toupper()
-#include <windows.h> // For Windows color functions
+#include <algorithm>
+#include <cctype>
+#include <string>
+#include <vector>
+#include <climits>
+#include <fstream>
+#include <sstream>
 
-// Color definitions
-#define RED "\033[31m"
-#define BLUE "\033[34m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define RESET "\033[0m"
+// Platform detection and headers
+#if defined(_WIN32) || defined(_WIN64)
+    #define PLATFORM_WINDOWS
+    #include <windows.h>
+#else
+    #define PLATFORM_UNIX
+#endif
 
 using namespace std;
 
-// Windows color functions
-void setColor(int color) {
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-}
-
-// Color constants for Windows
-const int RED_WIN = 12;      // Light Red
-const int BLUE_WIN = 9;      // Light Blue
-const int GREEN_WIN = 10;    // Light Green
-const int YELLOW_WIN = 14;   // Yellow
-const int CYAN_WIN = 11;     // Light Cyan
-const int MAGENTA_WIN = 13;  // Light Magenta
-const int WHITE = 15;        // White
+// ==================== CROSS-PLATFORM COLOR SYSTEM ====================
 
 /**
-        - Game board representation using a 2D array
-        - This data structure was chosen for its simplicity and direct mapping to the game board
-*/
-char space[3][3] = {{'1', '2', '3'}, {'4', '5', '6'}, {'7', '8', '9'}};
-char token = 'X';  // Current player's token
-bool gameTie = false;  // Game state tracking
-string name1, name2;  // Player names
-int width = 60;  // Display formatting constant
+ * @brief Color enumeration for cross-platform color support
+ */
+enum class Color {
+    RED, BLUE, GREEN, YELLOW, MAGENTA, CYAN, WHITE, RESET
+};
 
-//Clears the console screen based on the operating system
-void clearConsole() {
-#ifdef _WIN32
-    system("cls"); // For windows system
+/**
+ * @brief Sets console text color in a cross-platform way
+ * Windows: Uses SetConsoleTextAttribute
+ * Unix: Uses ANSI escape codes
+ */
+void setColor(Color color) {
+#ifdef PLATFORM_WINDOWS
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    int colorCode;
+    switch(color) {
+        case Color::RED:     colorCode = 12; break;
+        case Color::BLUE:    colorCode = 9;  break;
+        case Color::GREEN:   colorCode = 10; break;
+        case Color::YELLOW:  colorCode = 14; break;
+        case Color::MAGENTA: colorCode = 13; break;
+        case Color::CYAN:    colorCode = 11; break;
+        case Color::WHITE:   colorCode = 15; break;
+        case Color::RESET:   colorCode = 7;  break;
+        default:             colorCode = 7;  break;
+    }
+    SetConsoleTextAttribute(hConsole, colorCode);
 #else
-    system("clear"); // For Unix-like systems (Linux , macOS ...)
+    const char* ansiCode;
+    switch(color) {
+        case Color::RED:     ansiCode = "\033[31m"; break;
+        case Color::BLUE:    ansiCode = "\033[34m"; break;
+        case Color::GREEN:   ansiCode = "\033[32m"; break;
+        case Color::YELLOW:  ansiCode = "\033[33m"; break;
+        case Color::MAGENTA: ansiCode = "\033[35m"; break;
+        case Color::CYAN:    ansiCode = "\033[36m"; break;
+        case Color::WHITE:   ansiCode = "\033[37m"; break;
+        case Color::RESET:   ansiCode = "\033[0m";  break;
+        default:             ansiCode = "\033[0m";  break;
+    }
+    cout << ansiCode;
+#endif
+}
+
+// ==================== DATA STRUCTURES ====================
+
+/**
+ * @brief Represents a single move in the game
+ */
+struct Move {
+    int row, col;
+    char token;
+    Move(int r, int c, char t) : row(r), col(c), token(t) {}
+};
+
+/**
+ * @brief Game statistics tracker
+ */
+struct GameStats {
+    int player1Wins = 0;
+    int player2Wins = 0;
+    int draws = 0;
+    int totalGames = 0;
+    
+    void recordWin(bool player1Won) {
+        if (player1Won) player1Wins++;
+        else player2Wins++;
+        totalGames++;
+    }
+    
+    void recordDraw() {
+        draws++;
+        totalGames++;
+    }
+    
+    void reset() {
+        player1Wins = player2Wins = draws = totalGames = 0;
+    }
+};
+
+/**
+ * @brief AI difficulty levels
+ */
+enum class Difficulty {
+    EASY,    // Random moves
+    MEDIUM,  // Strategic play
+    HARD     // Minimax algorithm (unbeatable)
+};
+
+// ==================== GLOBAL VARIABLES ====================
+
+char space[3][3] = {{'1', '2', '3'}, {'4', '5', '6'}, {'7', '8', '9'}};
+char token = 'X';
+bool gameTie = false;
+string name1, name2;
+int width = 60;
+vector<Move> moveHistory;
+GameStats stats;
+Difficulty aiDifficulty = Difficulty::MEDIUM;
+
+// ==================== UTILITY FUNCTIONS ====================
+
+/**
+ * @brief Clears the console screen based on the operating system
+ * Complexity: O(1)
+ */
+void clearConsole() {
+#ifdef PLATFORM_WINDOWS
+    system("cls");
+#else
+    int result = system("clear");
+    if (result != 0) {
+        cout << "\033[2J\033[1;1H";  // ANSI fallback
+    }
 #endif
 }
 
 /**
-      -Displays the current state of the game board
-      -Uses formatted output to create a visually appealing board
+ * @brief Converts string to title case
+ * Complexity: O(n) where n is string length
+ */
+string toTitleCase(const string& str) {
+    string result = str;
+    bool newWord = true;
+    for (char& c : result) {
+        if (newWord && isalpha(c)) {
+            c = toupper(c);
+            newWord = false;
+        } else if (isalpha(c)) {
+            c = tolower(c);
+        }
+        if (isspace(c)) newWord = true;
+    }
+    return result;
+}
+
+// ==================== DISPLAY FUNCTIONS ====================
+
+/**
+ * @brief Displays the current state of the game board
+ * Uses formatted output with colors for X and O
+ * Complexity: O(1) - constant 3x3 board
  */
 void toeBox() {
     int x = 39;
-    setColor(GREEN_WIN);
-    cout << setw(width) <<" _______________________ \n";
-    cout << setw(width) <<"|                       |\n";
-    cout << setw(width) <<"|      TIC TAC TOE      |\n";
-    cout << setw(width) <<"|_______________________|\n";
-    cout << setw(width) <<"|***********************|\n";
-    cout << setw(width) <<"|*|     |      |      |*|\n";
+    setColor(Color::GREEN);
+    cout << setw(width) << " _______________________ \n";
+    cout << setw(width) << "|                       |\n";
+    cout << setw(width) << "|      TIC TAC TOE      |\n";
+    cout << setw(width) << "|_______________________|\n";
+    cout << setw(width) << "|***********************|\n";
+    cout << setw(width) << "|*|     |      |      |*|\n";
 
     // First row
     cout << setw(x) << "|*|  ";
-    if (space[0][0] == 'X') { setColor(RED_WIN); cout << space[0][0]; setColor(GREEN_WIN); }
-    else if (space[0][0] == 'O') { setColor(BLUE_WIN); cout << space[0][0]; setColor(GREEN_WIN); }
+    if (space[0][0] == 'X') { setColor(Color::RED); cout << space[0][0]; setColor(Color::GREEN); }
+    else if (space[0][0] == 'O') { setColor(Color::BLUE); cout << space[0][0]; setColor(Color::GREEN); }
     else cout << space[0][0];
     cout << "  |  ";
-    if (space[0][1] == 'X') { setColor(RED_WIN); cout << space[0][1]; setColor(GREEN_WIN); }
-    else if (space[0][1] == 'O') { setColor(BLUE_WIN); cout << space[0][1]; setColor(GREEN_WIN); }
+    if (space[0][1] == 'X') { setColor(Color::RED); cout << space[0][1]; setColor(Color::GREEN); }
+    else if (space[0][1] == 'O') { setColor(Color::BLUE); cout << space[0][1]; setColor(Color::GREEN); }
     else cout << space[0][1];
     cout << "   |  ";
-    if (space[0][2] == 'X') { setColor(RED_WIN); cout << space[0][2]; setColor(GREEN_WIN); }
-    else if (space[0][2] == 'O') { setColor(BLUE_WIN); cout << space[0][2]; setColor(GREEN_WIN); }
+    if (space[0][2] == 'X') { setColor(Color::RED); cout << space[0][2]; setColor(Color::GREEN); }
+    else if (space[0][2] == 'O') { setColor(Color::BLUE); cout << space[0][2]; setColor(Color::GREEN); }
     else cout << space[0][2];
     cout << "   |*|\n";
 
-    cout << setw(width) <<"|*|_____|______|______|*|\n";
-    cout << setw(width) <<"|*|     |      |      |*|\n";
+    cout << setw(width) << "|*|_____|______|______|*|\n";
+    cout << setw(width) << "|*|     |      |      |*|\n";
 
     // Second row
     cout << setw(x) << "|*|  ";
-    if (space[1][0] == 'X') { setColor(RED_WIN); cout << space[1][0]; setColor(YELLOW_WIN); }
-    else if (space[1][0] == 'O') { setColor(BLUE_WIN); cout << space[1][0]; setColor(YELLOW_WIN); }
+    if (space[1][0] == 'X') { setColor(Color::RED); cout << space[1][0]; setColor(Color::YELLOW); }
+    else if (space[1][0] == 'O') { setColor(Color::BLUE); cout << space[1][0]; setColor(Color::YELLOW); }
     else cout << space[1][0];
     cout << "  |  ";
-    if (space[1][1] == 'X') { setColor(RED_WIN); cout << space[1][1]; setColor(YELLOW_WIN); }
-    else if (space[1][1] == 'O') { setColor(BLUE_WIN); cout << space[1][1]; setColor(YELLOW_WIN); }
+    if (space[1][1] == 'X') { setColor(Color::RED); cout << space[1][1]; setColor(Color::YELLOW); }
+    else if (space[1][1] == 'O') { setColor(Color::BLUE); cout << space[1][1]; setColor(Color::YELLOW); }
     else cout << space[1][1];
     cout << "   |  ";
-    if (space[1][2] == 'X') { setColor(RED_WIN); cout << space[1][2]; setColor(YELLOW_WIN); }
-    else if (space[1][2] == 'O') { setColor(BLUE_WIN); cout << space[1][2]; setColor(YELLOW_WIN); }
+    if (space[1][2] == 'X') { setColor(Color::RED); cout << space[1][2]; setColor(Color::YELLOW); }
+    else if (space[1][2] == 'O') { setColor(Color::BLUE); cout << space[1][2]; setColor(Color::YELLOW); }
     else cout << space[1][2];
     cout << "   |*|\n";
 
-    cout << setw(width) <<"|*|_____|______|______|*|\n";
-    cout << setw(width) <<"|*|     |      |      |*|\n";
+    cout << setw(width) << "|*|_____|______|______|*|\n";
+    cout << setw(width) << "|*|     |      |      |*|\n";
 
     // Third row
     cout << setw(x) << "|*|  ";
-    if (space[2][0] == 'X') { setColor(RED_WIN); cout << space[2][0]; setColor(RED_WIN); }
-    else if (space[2][0] == 'O') { setColor(BLUE_WIN); cout << space[2][0]; setColor(RED_WIN); }
+    if (space[2][0] == 'X') { setColor(Color::RED); cout << space[2][0]; setColor(Color::RED); }
+    else if (space[2][0] == 'O') { setColor(Color::BLUE); cout << space[2][0]; setColor(Color::RED); }
     else cout << space[2][0];
     cout << "  |  ";
-    if (space[2][1] == 'X') { setColor(RED_WIN); cout << space[2][1]; setColor(RED_WIN); }
-    else if (space[2][1] == 'O') { setColor(BLUE_WIN); cout << space[2][1]; setColor(RED_WIN); }
+    if (space[2][1] == 'X') { setColor(Color::RED); cout << space[2][1]; setColor(Color::RED); }
+    else if (space[2][1] == 'O') { setColor(Color::BLUE); cout << space[2][1]; setColor(Color::RED); }
     else cout << space[2][1];
     cout << "   |  ";
-    if (space[2][2] == 'X') { setColor(RED_WIN); cout << space[2][2]; setColor(RED_WIN); }
-    else if (space[2][2] == 'O') { setColor(BLUE_WIN); cout << space[2][2]; setColor(RED_WIN); }
+    if (space[2][2] == 'X') { setColor(Color::RED); cout << space[2][2]; setColor(Color::RED); }
+    else if (space[2][2] == 'O') { setColor(Color::BLUE); cout << space[2][2]; setColor(Color::RED); }
     else cout << space[2][2];
     cout << "   |*|\n";
 
-    cout << setw(width) <<"|*|     |      |      |*|\n";
-    cout << setw(width) <<" *********************** \n";
-    setColor(WHITE);
+    cout << setw(width) << "|*|     |      |      |*|\n";
+    cout << setw(width) << " *********************** \n";
+    setColor(Color::WHITE);
 }
 
+/**
+ * @brief Displays game statistics
+ */
+void showStatistics() {
+    clearConsole();
+    setColor(Color::CYAN);
+    cout << "\n        ═══════════════════════════════════\n";
+    cout << "                GAME STATISTICS\n";
+    cout << "        ═══════════════════════════════════\n\n";
+    setColor(Color::WHITE);
+    cout << "        Total Games: " << stats.totalGames << "\n\n";
+    setColor(Color::GREEN);
+    cout << "        " << name1 << " Wins: " << stats.player1Wins << "\n";
+    if (name2 != "AI") {
+        cout << "        " << name2 << " Wins: " << stats.player2Wins << "\n";
+    } else {
+        setColor(Color::BLUE);
+        cout << "        AI Wins: " << stats.player2Wins << "\n";
+    }
+    setColor(Color::YELLOW);
+    cout << "        Draws: " << stats.draws << "\n\n";
+    setColor(Color::CYAN);
+    cout << "        ═══════════════════════════════════\n";
+    setColor(Color::WHITE);
+    cout << "\n        Press Enter to continue...";
+    cin.get();
+}
 
 /**
-     - Checks for winning conditions or a tie
-     - @return true if there's a winner or tie, false otherwise
+ * @brief Displays move history
+ */
+void showMoveHistory() {
+    clearConsole();
+    setColor(Color::MAGENTA);
+    cout << "\n        === MOVE HISTORY ===\n\n";
+    for (size_t i = 0; i < moveHistory.size(); i++) {
+        const Move& move = moveHistory[i];
+        string playerName = (move.token == 'X') ? name1 : name2;
+        int position = move.row * 3 + move.col + 1;
+        cout << "        " << (i + 1) << ". " << playerName << " (" << move.token 
+             << ") chose position " << position << "\n";
+    }
+    setColor(Color::WHITE);
+    cout << "\n        Press Enter to continue...";
+    cin.get();
+}
 
-     - Algorithm complexity: O(n²) where n is the board size (3)
-     - This is optimal for a 3x3 board as we need to check all possible winning combinations
-*/
+// ==================== GAME LOGIC ====================
+
+/**
+ * @brief Checks for winning conditions or a tie
+ * Algorithm complexity: O(1) - constant 3x3 board
+ * Checks: 3 rows + 3 columns + 2 diagonals + board full check
+ */
 bool checkWinner() {
-    // First check for a winner
+    // Check rows and columns
     for (int i = 0; i < 3; i++) {
         if ((space[i][0] == space[i][1] && space[i][1] == space[i][2]) ||
             (space[0][i] == space[1][i] && space[1][i] == space[2][i])) {
             return true;
         }
     }
+    
+    // Check diagonals
     if ((space[0][0] == space[1][1] && space[1][1] == space[2][2]) ||
         (space[0][2] == space[1][1] && space[1][1] == space[2][0])) {
         return true;
@@ -174,7 +335,6 @@ bool checkWinner() {
         }
     }
 
-    // If we get here, it's a draw
     if (isDraw) {
         gameTie = true;
         return true;
@@ -184,9 +344,49 @@ bool checkWinner() {
 }
 
 /**
-     - Handles the game logic for player moves
-     - Includes input validation and board updates
-*/
+ * @brief Records a move in history and makes it on the board
+ */
+bool makeMove(int row, int col) {
+    if (space[row][col] != 'X' && space[row][col] != 'O') {
+        moveHistory.push_back(Move(row, col, token));
+        space[row][col] = token;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Undoes the last 2 moves (returns to same player's turn)
+ */
+bool undoLastMove() {
+    if (moveHistory.size() < 2) {
+        setColor(Color::RED);
+        cout << setw(35) << "\nNot enough moves to undo!\n";
+        cout << setw(35) << "Press Enter to continue...";
+        cin.get();
+        setColor(Color::WHITE);
+        return false;
+    }
+    
+    for (int i = 0; i < 2; i++) {
+        Move lastMove = moveHistory.back();
+        moveHistory.pop_back();
+        int position = lastMove.row * 3 + lastMove.col + 1;
+        space[lastMove.row][lastMove.col] = '0' + position;
+        token = (token == 'X') ? 'O' : 'X';
+    }
+    
+    setColor(Color::GREEN);
+    cout << setw(35) << "\nMove undone!\n";
+    cout << setw(35) << "Press Enter to continue...";
+    cin.get();
+    setColor(Color::WHITE);
+    return true;
+}
+
+/**
+ * @brief Handles the game logic for player moves
+ */
 void gameLogic() {
     int digit;
     bool validChoice = false;
@@ -195,58 +395,83 @@ void gameLogic() {
         clearConsole();
         toeBox();
 
-        // Check if the game is already a draw
-        if (gameTie) {
-            return;
-        }
+        if (gameTie) return;
 
         if (token == 'X') {
-            cout << setw(35) << name1 << " Please Enter Choice (1-9): ";
+            cout << setw(35) << name1 << " Enter (1-9) [0=Menu]: ";
         } else {
-            cout << setw(35) << name2 << " Please Enter Choice (1-9): ";
+            cout << setw(35) << name2 << " Enter (1-9) [0=Menu]: ";
         }
 
-        if (!(cin >> digit)) {  // Check for invalid input
-            cin.clear();  // Clear error flags
-            cin.ignore(10000, '\n');  // Clear input buffer
-            setColor(RED_WIN);
-            cout << setw(35) << "\nInvalid input. Please enter a number between 1 and 9.\n";
+        if (!(cin >> digit)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            setColor(Color::RED);
+            cout << setw(35) << "\nInvalid input!\n";
             cout << setw(35) << "Press Enter to continue...";
             cin.get();
-            setColor(WHITE);
+            setColor(Color::WHITE);
+            continue;
+        }
+        
+        // In-game menu
+        if (digit == 0) {
+            clearConsole();
+            setColor(Color::CYAN);
+            cout << "\n        === IN-GAME MENU ===\n";
+            cout << "        1. Resume Game\n";
+            cout << "        2. Undo Last Move\n";
+            cout << "        3. View Move History\n";
+            cout << "        4. View Statistics\n";
+            cout << "        Choice: ";
+            setColor(Color::WHITE);
+            int choice;
+            cin >> choice;
+            cin.ignore();
+            
+            switch(choice) {
+                case 2:
+                    undoLastMove();
+                    break;
+                case 3:
+                    showMoveHistory();
+                    break;
+                case 4:
+                    showStatistics();
+                    break;
+            }
             continue;
         }
 
         if (digit < 1 || digit > 9) {
-            setColor(RED_WIN);
-            cout << setw(35) << "\nInvalid choice. Please enter a number between 1 and 9.\n";
+            setColor(Color::RED);
+            cout << setw(35) << "\nInvalid choice (1-9)!\n";
             cout << setw(35) << "Press Enter to continue...";
             cin.get();
-            setColor(WHITE);
+            setColor(Color::WHITE);
             continue;
         }
 
         int row = (digit - 1) / 3;
         int column = (digit - 1) % 3;
 
-        if (space[row][column] != 'X' && space[row][column] != 'O') {
-            space[row][column] = token;
+        if (makeMove(row, column)) {
             token = (token == 'X') ? 'O' : 'X';
             validChoice = true;
         } else {
-            setColor(RED_WIN);
-            cout << setw(35) << "\nThis space is already occupied. Try again.\n";
+            setColor(Color::RED);
+            cout << setw(35) << "\nSpace occupied!\n";
             cout << setw(35) << "Press Enter to continue...";
             cin.get();
-            cin.ignore(10000, '\n');  // Clear any remaining input
-            setColor(WHITE);
+            cin.ignore(10000, '\n');
+            setColor(Color::WHITE);
         }
     }
 }
 
 /**
-     - Resets the game board to its initial state
-     - Complexity: O(n²) where n is the board size (3)
+ * @brief Resets the game board to its initial state
+ * Complexity: O(1) - constant 3x3 board
  */
 void resetGame() {
     char defaultSpace = '1';
@@ -257,144 +482,316 @@ void resetGame() {
     }
     token = 'X';
     gameTie = false;
+    moveHistory.clear();
 }
+
+// ==================== AI IMPLEMENTATION ====================
+
 /**
- - Checks if a move would result in a win
-     - row Row position to check
-     - col Column position to check
-     - playerToken Token to check for ('X' or 'O')
- - @return true if the move would result in a win
+ * @brief Checks if a move would result in a win
+ * Complexity: O(1)
  */
 bool wouldWin(int row, int col, char playerToken) {
-    // Temporarily make the move
     char original = space[row][col];
     space[row][col] = playerToken;
-
-    // Check if this move would win
+    
     bool win = false;
-
+    
     // Check row
     if (space[row][0] == playerToken && space[row][1] == playerToken && space[row][2] == playerToken)
         win = true;
-
+    
     // Check column
     if (space[0][col] == playerToken && space[1][col] == playerToken && space[2][col] == playerToken)
         win = true;
-
+    
     // Check diagonals
     if (row == col && space[0][0] == playerToken && space[1][1] == playerToken && space[2][2] == playerToken)
         win = true;
     if (row + col == 2 && space[0][2] == playerToken && space[1][1] == playerToken && space[2][0] == playerToken)
         win = true;
-
-    // Undo the move
+    
     space[row][col] = original;
     return win;
 }
+
 /**
- - Implements AI moves for single-player mode
- - Uses a strategic approach to make moves:
-     1. Win if possible
-     2. Block opponent's winning move
-     3. Take center if available
-     4. Take corners if available
-     5. Take edges as last resort
-*/
-void aiMove() {
-    // 1.Try to win
+ * @brief Evaluates board state for minimax
+ * @return +10 if AI wins, -10 if player wins, 0 otherwise
+ */
+int evaluate() {
+    // Check rows and columns
+    for (int i = 0; i < 3; i++) {
+        if (space[i][0] == space[i][1] && space[i][1] == space[i][2]) {
+            if (space[i][0] == 'O') return 10;
+            if (space[i][0] == 'X') return -10;
+        }
+        if (space[0][i] == space[1][i] && space[1][i] == space[2][i]) {
+            if (space[0][i] == 'O') return 10;
+            if (space[0][i] == 'X') return -10;
+        }
+    }
+    
+    // Check diagonals
+    if (space[0][0] == space[1][1] && space[1][1] == space[2][2]) {
+        if (space[0][0] == 'O') return 10;
+        if (space[0][0] == 'X') return -10;
+    }
+    if (space[0][2] == space[1][1] && space[1][1] == space[2][0]) {
+        if (space[0][2] == 'O') return 10;
+        if (space[0][2] == 'X') return -10;
+    }
+    
+    return 0;
+}
+
+/**
+ * @brief Checks if game is over
+ */
+bool isGameOver() {
+    if (evaluate() != 0) return true;
+    
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            if (space[i][j] != 'X' && space[i][j] != 'O')
+                return false;
+    
+    return true;
+}
+
+/**
+ * @brief Minimax algorithm with alpha-beta pruning
+ * 
+ * Time Complexity: O(b^d) where b=branching factor, d=depth
+ * With alpha-beta: Best O(b^(d/2)), Average O(b^(3d/4))
+ * Space Complexity: O(d) for recursion stack
+ * 
+ * Algorithm:
+ * 1. Base case: If game over, return evaluation
+ * 2. Try all possible moves
+ * 3. Recursively evaluate each move
+ * 4. Return best score for current player
+ * 5. Prune branches that can't affect final decision
+ */
+int minimax(int depth, bool isMaximizing, int alpha, int beta) {
+    int score = evaluate();
+    
+    // Base cases
+    if (score == 10) return score - depth;   // AI wins (prefer faster wins)
+    if (score == -10) return score + depth;  // Player wins
+    if (isGameOver()) return 0;              // Draw
+    
+    if (isMaximizing) {
+        // AI's turn - maximize score
+        int best = INT_MIN;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (space[i][j] != 'X' && space[i][j] != 'O') {
+                    char original = space[i][j];
+                    space[i][j] = 'O';
+                    int value = minimax(depth + 1, false, alpha, beta);
+                    best = max(best, value);
+                    alpha = max(alpha, best);
+                    space[i][j] = original;
+                    if (beta <= alpha) break;  // Alpha-beta pruning
+                }
+            }
+        }
+        return best;
+    } else {
+        // Player's turn - minimize score
+        int best = INT_MAX;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (space[i][j] != 'X' && space[i][j] != 'O') {
+                    char original = space[i][j];
+                    space[i][j] = 'X';
+                    int value = minimax(depth + 1, true, alpha, beta);
+                    best = min(best, value);
+                    beta = min(beta, best);
+                    space[i][j] = original;
+                    if (beta <= alpha) break;  // Alpha-beta pruning
+                }
+            }
+        }
+        return best;
+    }
+}
+
+/**
+ * @brief Finds best move using minimax (HARD difficulty)
+ */
+void findBestMoveHard(int& bestRow, int& bestCol) {
+    int bestValue = INT_MIN;
+    bestRow = -1;
+    bestCol = -1;
+    
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (space[i][j] != 'X' && space[i][j] != 'O') {
+                char original = space[i][j];
+                space[i][j] = 'O';
+                int moveValue = minimax(0, false, INT_MIN, INT_MAX);
+                space[i][j] = original;
+                
+                if (moveValue > bestValue) {
+                    bestRow = i;
+                    bestCol = j;
+                    bestValue = moveValue;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * @brief Makes a strategic move (MEDIUM difficulty)
+ * Strategy:
+ * 1. Win if possible
+ * 2. Block opponent's winning move
+ * 3. Take center if available
+ * 4. Take corners
+ * 5. Take edges
+ */
+void makeStrategicMove(int& row, int& col) {
+    // 1. Try to win
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (space[i][j] != 'X' && space[i][j] != 'O') {
                 if (wouldWin(i, j, 'O')) {
-                    space[i][j] = 'O';
-                    cout << "AI played O at position " << (i * 3 + j + 1) << endl;
+                    row = i; col = j;
                     return;
                 }
             }
         }
     }
-
-    // 2.Block opponent's winning move
+    
+    // 2. Block opponent
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (space[i][j] != 'X' && space[i][j] != 'O') {
                 if (wouldWin(i, j, 'X')) {
-                    space[i][j] = 'O';
-                    cout << "AI played O at position " << (i * 3 + j + 1) << endl;
+                    row = i; col = j;
                     return;
                 }
             }
         }
     }
-
-    // 3.Take center if available
+    
+    // 3. Take center
     if (space[1][1] != 'X' && space[1][1] != 'O') {
-        space[1][1] = 'O';
-        cout << "AI played O at position 5" << endl;
+        row = 1; col = 1;
         return;
     }
-
-    // 4.Take corners if available
+    
+    // 4. Take corners
     int corners[4][2] = {{0,0}, {0,2}, {2,0}, {2,2}};
     for (int i = 0; i < 4; i++) {
-        if (space[corners[i][0]][corners[i][1]] != 'X' && space[corners[i][0]][corners[i][1]] != 'O') {
-            space[corners[i][0]][corners[i][1]] = 'O';
-            cout << "AI played O at position " << (corners[i][0] * 3 + corners[i][1] + 1) << endl;
+        if (space[corners[i][0]][corners[i][1]] != 'X' && 
+            space[corners[i][0]][corners[i][1]] != 'O') {
+            row = corners[i][0];
+            col = corners[i][1];
             return;
         }
     }
-
-    // 5.Take any available edge
+    
+    // 5. Take edges
     int edges[4][2] = {{0,1}, {1,0}, {1,2}, {2,1}};
     for (int i = 0; i < 4; i++) {
-        if (space[edges[i][0]][edges[i][1]] != 'X' && space[edges[i][0]][edges[i][1]] != 'O') {
-            space[edges[i][0]][edges[i][1]] = 'O';
-            cout << "AI played O at position " << (edges[i][0] * 3 + edges[i][1] + 1) << endl;
+        if (space[edges[i][0]][edges[i][1]] != 'X' && 
+            space[edges[i][0]][edges[i][1]] != 'O') {
+            row = edges[i][0];
+            col = edges[i][1];
             return;
         }
     }
 }
+
+/**
+ * @brief Makes a random move (EASY difficulty)
+ */
+void makeRandomMove(int& row, int& col) {
+    vector<pair<int, int>> available;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (space[i][j] != 'X' && space[i][j] != 'O') {
+                available.push_back({i, j});
+            }
+        }
+    }
+    
+    if (!available.empty()) {
+        int choice = rand() % available.size();
+        row = available[choice].first;
+        col = available[choice].second;
+    }
+}
+
+/**
+ * @brief AI move dispatcher based on difficulty
+ */
+void aiMove() {
+    int row, col;
+    
+    switch (aiDifficulty) {
+        case Difficulty::EASY:
+            makeRandomMove(row, col);
+            cout << "AI (Easy) played O at position " << (row * 3 + col + 1) << endl;
+            break;
+        case Difficulty::MEDIUM:
+            makeStrategicMove(row, col);
+            cout << "AI (Medium) played O at position " << (row * 3 + col + 1) << endl;
+            break;
+        case Difficulty::HARD:
+            findBestMoveHard(row, col);
+            cout << "AI (Hard/Minimax) played O at position " << (row * 3 + col + 1) << endl;
+            break;
+    }
+    
+    makeMove(row, col);
+}
+
+// ==================== GAME MODES ====================
 
 bool playAgain() {
     char choice;
-    setColor(YELLOW_WIN);
-    cout << setw(35) << "\nWould you like to play again? (Y/N): ";
+    setColor(Color::YELLOW);
+    cout << setw(35) << "\nPlay again? (Y/N): ";
     cin >> choice;
-    cin.ignore(10000, '\n');  // Clear input buffer
-    setColor(WHITE);
+    cin.ignore(10000, '\n');
+    setColor(Color::WHITE);
     return (choice == 'Y' || choice == 'y');
 }
+
 /**
-    - Function to convert a string to Title Case
-    - @eg "MISIKER GENENE" → "Misiker Genene"
- */
-string toTitleCase(string str) {
-    bool newWord = true;
-    for (char &c : str) {
-        if (newWord) {
-            c = toupper(c);  // Capitalize first letter of word
-            newWord = false;
-        } else {
-            c = tolower(c);  // Lowercase rest of word
-        }
-        if (isspace(c)) {
-            newWord = true; // Next character starts a new word
-        }
-    }
-    return str;
-}
-/**
-     - Manages the single-player game mode
-     - Handles player vs AI gameplay
+ * @brief Single-player game mode
  */
 void singlePlayerGame() {
+    // Select difficulty
+    clearConsole();
+    setColor(Color::CYAN);
+    cout << "\n        Select AI Difficulty:\n";
+    cout << "        1. Easy   - Random moves\n";
+    cout << "        2. Medium - Strategic play\n";
+    cout << "        3. Hard   - Unbeatable (Minimax)\n";
+    cout << "        Choice: ";
+    setColor(Color::WHITE);
+    int diff;
+    cin >> diff;
+    cin.ignore();
+    
+    switch(diff) {
+        case 1: aiDifficulty = Difficulty::EASY; break;
+        case 3: aiDifficulty = Difficulty::HARD; break;
+        default: aiDifficulty = Difficulty::MEDIUM; break;
+    }
+    
     do {
         resetGame();
         clearConsole();
         cout << setw(58) << "Enter your name: ";
         getline(cin, name1);
-        name1 = toTitleCase(name1); // Converts to "Firstname Lastname"
-
+        name1 = toTitleCase(name1);
         name2 = "AI";
 
         while (!checkWinner()) {
@@ -405,51 +802,52 @@ void singlePlayerGame() {
             } else {
                 aiMove();
                 token = 'X';
+                cout << "Press Enter to continue...";
+                cin.get();
             }
         }
 
         clearConsole();
         toeBox();
+        
         if (gameTie) {
-            setColor(RED_WIN);
+            stats.recordDraw();
+            setColor(Color::RED);
             cout << setw(58) << "It's a draw!\n";
-            setColor(WHITE);
+            setColor(Color::WHITE);
         } else {
             char winnerToken = (token == 'X') ? 'O' : 'X';
-            setColor(YELLOW_WIN);
+            stats.recordWin(winnerToken == 'X');
+            setColor(Color::YELLOW);
             cout << setw(70) << "*************************************************\n";
             cout << setw(45) << ((winnerToken == 'X') ? name1 : name2) << " Wins!\n";
             cout << setw(70) << "*************************************************\n";
-            setColor(WHITE);
+            setColor(Color::WHITE);
 
-          // If player (X) beats AI (O), show special message
             if (winnerToken == 'X') {
-                cout << "\n🏆🎉 YOU BEAT THE AI! 🎉🏆\n";
-                cout << "What?! How did you do that?\n";
-                cout << "You’ve just done the impossible.\n";
-                cout << "Either you’re a genius… or the AI blinked.\n";
-                cout << "Respect. You’ve earned it.\n";
-                cout << "\n🔒 Achievement Unlocked: AI Slayer\n\n";
+                setColor(Color::GREEN);
+                cout << "\n        🏆 YOU BEAT THE AI! 🏆\n";
+                cout << "        Congratulations!\n\n";
+                setColor(Color::WHITE);
             }
         }
     } while (playAgain());
 }
 
 /**
-     - Manages the two-player game mode
-     - Handles player vs player gameplay
-*/
+ * @brief Two-player game mode
+ */
 void twoPlayerGame() {
     do {
         resetGame();
         clearConsole();
-        cout << setw(58) << "Enter the name of the First player : ";
+        cout << setw(58) << "Enter first player name: ";
         getline(cin, name1);
-        name1 = toTitleCase(name1); // Converts to "Firstname Lastname"
+        name1 = toTitleCase(name1);
 
-        cout << setw(58) << "Enter the name of the Second player: ";
+        cout << setw(58) << "Enter second player name: ";
         getline(cin, name2);
-        name2 = toTitleCase(name2); // Converts to "Firstname Lastname"
+        name2 = toTitleCase(name2);
 
         while (!checkWinner()) {
             clearConsole();
@@ -459,68 +857,70 @@ void twoPlayerGame() {
 
         clearConsole();
         toeBox();
+        
         if (gameTie) {
+            stats.recordDraw();
+            setColor(Color::RED);
             cout << setw(58) << "It's a draw!\n";
+            setColor(Color::WHITE);
         } else {
             char winnerToken = (token == 'X') ? 'O' : 'X';
-            setColor(YELLOW_WIN);
+            stats.recordWin(winnerToken == 'X');
+            setColor(Color::YELLOW);
             cout << setw(70) << "*************************************************\n";
             cout << setw(45) << ((winnerToken == 'X') ? name1 : name2) << " Wins!\n";
             cout << setw(70) << "*************************************************\n";
-            setColor(WHITE);
+            setColor(Color::WHITE);
         }
     } while (playAgain());
 }
+
 /**
-    - Displays the main menu and handles user navigation
-*/
+ * @brief Displays game rules
+ */
+void showRules() {
+    clearConsole();
+    setColor(Color::BLUE);
+    cout << setw(width) << " ___________________________________________________________________________\n";
+    cout << setw(width) << "|                         TIC TAC TOE RULES                                 |\n";
+    cout << setw(width) << "|___________________________________________________________________________|\n";
+    cout << setw(width) << "|1. The game is played on a 3x3 grid.                                       |\n";
+    cout << setw(width) << "|2. Players take turns placing marks (X or O) in an empty cell.            |\n";
+    cout << setw(width) << "|3. First player to get 3 marks in a row wins.                              |\n";
+    cout << setw(width) << "|4. If all 9 cells are filled with no winner, it's a tie.                   |\n";
+    cout << setw(width) << "|5. Press 0 during game for menu (undo, history, stats).                    |\n";
+    cout << setw(width) << "|                  Press Enter to return...                                 |\n";
+    cout << setw(width) << "*****************************************************************************\n";
+    setColor(Color::WHITE);
+    cin.get();
+}
+
+/**
+ * @brief Main menu
+ */
 void showMenu() {
     int choice;
     while (true) {
         clearConsole();
-        // Top box
-        setColor(YELLOW_WIN);
-        cout << "             TIC TAC TOE         " << endl;
-        setColor(MAGENTA_WIN);
-        cout << "        -----------------------  " << endl;
-        // Menu options
-        cout << "        ";
-        setColor(CYAN_WIN);
-        cout << "1. Start New Game";
-        setColor(WHITE);
-        cout << "       "<< endl;
-
-        cout << "        ";
-        setColor(CYAN_WIN);
-        cout << "2. Single player";
-        setColor(WHITE);
-        cout << "       " << endl;
-
-        cout << "        ";
-        setColor(CYAN_WIN);
-        cout << "3. View Game Rules";
-        setColor(WHITE);
-        cout << "        " << endl;
-
-        cout << "        ";
-        setColor(CYAN_WIN);
-        cout << "4. Exit";
-        setColor(WHITE);
-        cout << "                  " << endl;
-
-        setColor(WHITE);
-        setColor(MAGENTA_WIN);
-        cout << "        ***********************" << endl;
-        setColor(YELLOW_WIN);
-        cout << "        Enter your choice: ";
-        setColor(WHITE);
+        setColor(Color::YELLOW);
+        cout << "             TIC TAC TOE (Enhanced)     \n";
+        setColor(Color::MAGENTA);
+        cout << "        -----------------------  \n";
+        setColor(Color::CYAN);
+        cout << "        1. Two Player Mode\n";
+        cout << "        2. Single Player Mode (vs AI)\n";
+        cout << "        3. View Statistics\n";
+        cout << "        4. View Game Rules\n";
+        cout << "        5. Exit\n";
+        setColor(Color::MAGENTA);
+        cout << "        ***********************\n";
+        setColor(Color::YELLOW);
+        cout << "        Enter choice: ";
+        setColor(Color::WHITE);
 
         if (!(cin >> choice)) {
             cin.clear();
             cin.ignore(10000, '\n');
-            cout << "\nInvalid input. Please enter a number between 1 and 4.\n";
-            cout << "Press Enter to continue...";
-            cin.get();
             continue;
         }
         cin.ignore();
@@ -533,43 +933,31 @@ void showMenu() {
                 singlePlayerGame();
                 break;
             case 3:
-                clearConsole();
-                setColor(BLUE_WIN);
-                cout << setw(width) << " ____________________________________________________________________________________________\n";
-                cout << setw(width) << "|                                                                                            |\n";
-                cout << setw(width) << "|                                      TIC TAC TOE RULES:                                    |\n";
-                cout << setw(width) << "|____________________________________________________________________________________________|\n";
-                cout << setw(width) << "|********************************************************************************************|\n";
-                cout << setw(width) << "|1. The game is played on a 3x3 grid.                                                        |\n";
-                cout << setw(width) << "|2. Players take turns placing their marks (X or O) in an empty cell.                        |\n";
-                cout << setw(width) << "|3. The first player to get 3 marks in a row (horizontally, vertically, or diagonally) wins. |\n";
-                cout << setw(width) << "|4. If all 9 cells are filled and no one has won, the game is a tie.                         |\n";
-                cout << setw(width) << "|                  Press Enter to return to the menu....                                     |\n";
-                cout << setw(width) << "**********************************************************************************************\n";
-                cin.get();
-                setColor(WHITE);
+                showStatistics();
                 break;
             case 4:
-                setColor(RED_WIN);
-                cout << setw(50) << "Exiting the game. Goodbye!\n";
-                setColor(WHITE);
+                showRules();
+                break;
+            case 5:
+                setColor(Color::RED);
+                cout << setw(50) << "Exiting. Goodbye!\n";
+                setColor(Color::WHITE);
                 return;
             default:
-                setColor(RED_WIN);
-                cout << setw(50) << "\nInvalid choice. Please enter a number between 1 and 4.\n";
-                cout << setw(50) << "Press Enter to continue...";
+                setColor(Color::RED);
+                cout << "Invalid choice!\n";
+                setColor(Color::WHITE);
                 cin.get();
-                setColor(WHITE);
                 break;
         }
     }
 }
+
 /**
-     - Main function that initializes the game
-     - @return 0 on successful execution
-*/
+ * @brief Main entry point
+ */
 int main() {
-    srand(time(0));  // Initialize random seed for AI moves
+    srand(static_cast<unsigned>(time(0)));
     showMenu();
     return 0;
 }
